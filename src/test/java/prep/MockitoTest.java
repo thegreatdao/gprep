@@ -4,6 +4,7 @@ package prep;
  */
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
 import java.util.List;
 
@@ -204,6 +205,12 @@ public class MockitoTest
 	{
 		when(mockedList.get(anyInt())).thenThrow(new RuntimeException()).thenReturn("one", "two", "three");
 		mockedList.get(-1);
+		String string = mockedList.get(1);
+		assertEquals("one", string);
+		string = mockedList.get(1);
+		assertEquals("two", string);
+		string = mockedList.get(1);
+		assertEquals("three", string);
 	}
 	
 }
