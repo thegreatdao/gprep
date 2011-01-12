@@ -6,6 +6,7 @@ import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Before;
@@ -15,7 +16,9 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 @SuppressWarnings("unchecked")
 @RunWith(MockitoJUnitRunner.class)
@@ -205,13 +208,73 @@ public class MockitoTest
 	{
 		when(mockedList.get(anyInt())).thenThrow(new RuntimeException()).thenReturn("one", "two", "three");
 		mockedList.get(-1);
-		String string = mockedList.get(1);
+		String string = mockedList.get(-1);
 		assertEquals("one", string);
-		string = mockedList.get(1);
+		string = mockedList.get(-1);
 		assertEquals("two", string);
-		string = mockedList.get(1);
+		string = mockedList.get(-1);
 		assertEquals("three", string);
 	}
 	
+	@Test // controversial
+	public void testStubWithCallback()
+	{
+		 when(mockedList.get(anyInt())).thenAnswer(new Answer<String>() {
+		     public String answer(InvocationOnMock invocation) {
+		         Object[] args = invocation.getArguments();
+//		         Object mock = invocation.getMock();
+		         return "called with arguments: " + args;
+		     }
+		 });
+		 System.out.println(mockedList.get(1));
+	}
+	
+	@Test(expected = RuntimeException.class)
+	public void testStubVoid()
+	{
+		doThrow(new RuntimeException()).when(mockedList).clear();
+		mockedList.clear();
+		doReturn("doReturn from void").when(mockedList).clear();
+	}
+	
+	@Test
+	public void testSpyingObject()
+	{
+		List<String> list = new LinkedList<String>();
+		List<String> spy = spy(list);
+
+		// optionally, you can stub out some methods:
+		when(spy.size()).thenReturn(100);
+
+		// using the spy calls real methods
+		spy.add("one");
+		spy.add("two");
+
+		// prints "one" - the first element of a list
+		System.out.println(spy.get(0));
+
+		// size() method was stubbed - 100 is printed
+		System.out.println(spy.size());
+
+		// optionally, you can verify
+		verify(spy).add("one");
+		verify(spy).add("two");
+
+	}
+	
+	@Test(expected = IndexOutOfBoundsException.class)
+	public void testSpyGotchas()
+	{
+		List<String> list = new LinkedList<String>();
+		List<String> spy = spy(list);
+
+		// Impossible: real method is called so spy.get(0) throws
+		// IndexOutOfBoundsException (the list is yet empty)
+		when(spy.get(0)).thenReturn("foo");
+
+		// You have to use doReturn() for stubbing
+		String string = doReturn("foo").when(spy).get(0);
+		assertEquals("foo", string);
+	}
 }
 
